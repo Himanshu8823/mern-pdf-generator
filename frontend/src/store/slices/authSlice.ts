@@ -8,10 +8,22 @@ interface AuthState {
   isLoading: boolean;
 }
 
+// Helper function to safely parse stored user
+const getStoredUser = (): User | null => {
+  const userString = localStorage.getItem('user');
+  if (!userString) return null;
+  try {
+    return JSON.parse(userString);
+  } catch {
+    localStorage.removeItem('user');
+    return null;
+  }
+};
+
 const initialState: AuthState = {
-  user: null,
+  user: getStoredUser(),
   token: localStorage.getItem('token'),
-  isAuthenticated: !!localStorage.getItem('token'),
+  isAuthenticated: !!localStorage.getItem('token') && !!getStoredUser(),
   isLoading: false,
 };
 
@@ -23,36 +35,51 @@ const authSlice = createSlice({
       state.isLoading = action.payload;
     },
     loginSuccess: (state, action: PayloadAction<{ user: User; token: string }>) => {
-      state.user = action.payload.user;
-      state.token = action.payload.token;
+      const { user, token } = action.payload;
+      // Update state
+      state.user = user;
+      state.token = token;
       state.isAuthenticated = true;
       state.isLoading = false;
-      localStorage.setItem('token', action.payload.token);
-      localStorage.setItem('user', JSON.stringify(action.payload.user));
+      
+      // Update localStorage
+      try {
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+      } catch (error) {
+        console.error('Failed to save auth data to localStorage:', error);
+      }
     },
     logout: (state) => {
+      // Clear state
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
       state.isLoading = false;
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      
+      // Clear localStorage
+      try {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      } catch (error) {
+        console.error('Failed to clear auth data from localStorage:', error);
+      }
     },
     loadUserFromStorage: (state) => {
       const token = localStorage.getItem('token');
-      const userString = localStorage.getItem('user');
+      const user = getStoredUser();
       
-      if (token && userString) {
-        try {
-          const user = JSON.parse(userString);
-          state.token = token;
-          state.user = user;
-          state.isAuthenticated = true;
-        } catch (error) {
-          // Clear invalid data
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-        }
+      if (token && user) {
+        state.token = token;
+        state.user = user;
+        state.isAuthenticated = true;
+      } else {
+        // Clear invalid/incomplete data
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
       }
     },
   },
