@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, Link } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
@@ -14,6 +14,7 @@ import { Label } from '../ui/label';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../ui/card';
 import { authAPI } from '../../services/api';
 import { loginSuccess, setLoading } from '../../store/slices/authSlice';
+import { RootState } from '../../store';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -26,6 +27,13 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [showPassword, setShowPassword] = React.useState(false);
+  const { isAuthenticated, isLoading } = useSelector((state: RootState) => state.auth);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/products', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const {
     register,
@@ -39,20 +47,24 @@ const LoginPage: React.FC = () => {
     mutationFn: authAPI.login,
     onSuccess: (response) => {
       if (response.success && response.data) {
+        // First update Redux state
         dispatch(loginSuccess(response.data));
         toast.success('Login successful!');
-        navigate('/products');
+        // Navigation will happen automatically through useEffect
       } else {
+        dispatch(setLoading(false));
         toast.error(response.message || 'Login failed');
       }
     },
     onError: (error: any) => {
+      dispatch(setLoading(false));
       const errorMessage = error.response?.data?.message || 'Login failed';
       toast.error(errorMessage);
     },
   });
 
-  const onSubmit = (data: LoginFormData) => {
+  const onSubmit = async (data: LoginFormData) => {
+    if (isLoading) return;
     dispatch(setLoading(true));
     loginMutation.mutate(data);
   };

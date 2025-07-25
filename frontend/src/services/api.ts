@@ -3,14 +3,16 @@ import { ApiResponse, AuthResponse, LoginRequest, RegisterRequest, InvoiceReques
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+// Create axios instance with default config
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Important for handling cookies if you're using them
 });
 
-// Request interceptor to add auth token
+// Request interceptor
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -24,14 +26,21 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle errors
+// Response interceptor
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Handle 401 errors
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
       // Clear invalid token
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      
+      // Redirect to login
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -40,20 +49,47 @@ api.interceptors.response.use(
 
 export const authAPI = {
   login: async (data: LoginRequest): Promise<ApiResponse<AuthResponse>> => {
-    const response = await api.post('/auth/login', data);
-    return response.data;
+    try {
+      const response = await api.post('/auth/login', data);
+      return response.data;
+    } catch (error: any) {
+      throw error;
+    }
   },
   
   register: async (data: RegisterRequest): Promise<ApiResponse> => {
-    const response = await api.post('/auth/register', data);
-    return response.data;
+    try {
+      const response = await api.post('/auth/register', data);
+      return response.data;
+    } catch (error: any) {
+      throw error;
+    }
   },
+
+  logout: async (): Promise<void> => {
+    try {
+      await api.post('/auth/logout');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still clear local storage even if API call fails
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+  }
 };
 
 export const invoiceAPI = {
   generatePDF: async (data: InvoiceRequest): Promise<ApiResponse<InvoiceResponse>> => {
-    const response = await api.post('/invoice/generate', data);
-    return response.data;
+    try {
+      const response = await api.post('/invoice/generate', data);
+      return response.data;
+    } catch (error: any) {
+      throw error;
+    }
   },
 };
 
