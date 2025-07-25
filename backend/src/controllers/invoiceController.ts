@@ -65,13 +65,6 @@ export const generateInvoicePDF = async (req: AuthRequest, res: Response) => {
 
     await browser.close();
 
-    // Set response headers for PDF download
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="invoice-${invoice.invoiceNumber}.pdf"`,
-      'Content-Length': pdfBuffer.length.toString()
-    });
-
     res.status(200).json({
       success: true,
       message: 'Invoice generated successfully',
@@ -100,7 +93,14 @@ export const generateInvoicePDF = async (req: AuthRequest, res: Response) => {
 
 const generateInvoiceHTML = (invoice: any, user: any, products: IProduct[]): string => {
   const formatCurrency = (amount: number) => `₹${amount.toFixed(2)}`;
-  const formatDate = (date: Date) => date.toLocaleDateString('en-IN');
+  const formatDate = (date: Date) => {
+    const options: Intl.DateTimeFormatOptions = { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    };
+    return date.toLocaleDateString('en-US', options);
+  };
 
   return `
     <!DOCTYPE html>
@@ -114,171 +114,250 @@ const generateInvoiceHTML = (invoice: any, user: any, products: IProduct[]): str
                 padding: 0;
                 box-sizing: border-box;
             }
+            
             body {
-                font-family: 'Arial', sans-serif;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
                 line-height: 1.6;
                 color: #333;
                 background: #fff;
             }
+            
             .invoice-container {
                 max-width: 800px;
                 margin: 0 auto;
                 padding: 40px;
                 background: white;
             }
-            .invoice-header {
+            
+            .header {
                 display: flex;
                 justify-content: space-between;
                 align-items: flex-start;
                 margin-bottom: 40px;
-                border-bottom: 3px solid #4f46e5;
+                border-bottom: 2px solid #e5e7eb;
                 padding-bottom: 20px;
             }
-            .logo-section h1 {
-                font-size: 32px;
+            
+            .company-info h1 {
+                font-size: 28px;
                 font-weight: bold;
-                color: #4f46e5;
+                color: #1f2937;
                 margin-bottom: 5px;
             }
-            .logo-section p {
+            
+            .company-info p {
                 color: #6b7280;
                 font-size: 14px;
             }
-            .invoice-info {
+            
+            .invoice-title {
                 text-align: right;
             }
-            .invoice-info h2 {
-                font-size: 28px;
-                color: #111827;
+            
+            .invoice-title h2 {
+                font-size: 32px;
+                font-weight: bold;
+                color: #1f2937;
                 margin-bottom: 10px;
             }
+            
             .invoice-details {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 40px;
+                display: flex;
+                justify-content: space-between;
                 margin-bottom: 40px;
+                gap: 60px;
             }
-            .bill-to h3, .invoice-meta h3 {
+            
+            .bill-to h3 {
                 font-size: 16px;
-                color: #4f46e5;
+                color: #374151;
                 margin-bottom: 15px;
+                font-weight: 600;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
             }
-            .bill-to p, .invoice-meta p {
+            
+            .bill-to .customer-name {
+                font-size: 18px;
+                font-weight: bold;
+                color: #1f2937;
+                margin-bottom: 5px;
+            }
+            
+            .bill-to .customer-email {
+                color: #6b7280;
+                font-size: 14px;
+            }
+            
+            .invoice-meta h3 {
+                font-size: 16px;
+                color: #374151;
+                margin-bottom: 15px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            
+            .invoice-meta p {
                 margin-bottom: 8px;
                 color: #374151;
+                font-size: 14px;
             }
+            
+            .invoice-meta strong {
+                color: #1f2937;
+            }
+            
             .products-table {
                 width: 100%;
                 border-collapse: collapse;
                 margin-bottom: 30px;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            }
-            .products-table th {
-                background: #4f46e5;
-                color: white;
-                padding: 15px 12px;
-                text-align: left;
-                font-weight: 600;
-                text-transform: uppercase;
-                font-size: 12px;
-                letter-spacing: 0.5px;
-            }
-            .products-table td {
-                padding: 15px 12px;
-                border-bottom: 1px solid #e5e7eb;
-                color: #374151;
-            }
-            .products-table tr:nth-child(even) {
-                background: #f9fafb;
-            }
-            .products-table tr:hover {
-                background: #f3f4f6;
-            }
-            .text-right {
-                text-align: right;
-            }
-            .totals-section {
-                margin-left: auto;
-                width: 300px;
                 border: 1px solid #e5e7eb;
                 border-radius: 8px;
                 overflow: hidden;
             }
+            
+            .products-table thead {
+                background: #f9fafb;
+            }
+            
+            .products-table th {
+                padding: 15px;
+                text-align: left;
+                font-weight: 600;
+                color: #374151;
+                font-size: 14px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                border-bottom: 1px solid #e5e7eb;
+            }
+            
+            .products-table th:last-child,
+            .products-table td:last-child {
+                text-align: right;
+            }
+            
+            .products-table td {
+                padding: 15px;
+                border-bottom: 1px solid #f3f4f6;
+                color: #374151;
+                font-size: 14px;
+            }
+            
+            .products-table tbody tr:hover {
+                background: #f9fafb;
+            }
+            
+            .product-name {
+                font-weight: 600;
+                color: #1f2937;
+            }
+            
+            .totals-section {
+                margin-left: auto;
+                width: 350px;
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                overflow: hidden;
+                background: #fff;
+            }
+            
             .total-row {
                 display: flex;
                 justify-content: space-between;
-                padding: 12px 20px;
-                border-bottom: 1px solid #e5e7eb;
+                padding: 15px 20px;
+                border-bottom: 1px solid #f3f4f6;
+                font-size: 14px;
             }
+            
             .total-row:last-child {
                 border-bottom: none;
-                background: #4f46e5;
-                color: white;
-                font-weight: bold;
-                font-size: 16px;
-            }
-            .total-row.subtotal {
                 background: #f9fafb;
+                font-weight: bold;
+                font-size: 18px;
+                color: #1f2937;
             }
+            
+            .total-row.subtotal {
+                color: #374151;
+            }
+            
+            .total-row.gst {
+                color: #374151;
+            }
+            
+            .total-label {
+                font-weight: 500;
+            }
+            
+            .total-amount {
+                font-weight: 600;
+            }
+            
             .footer {
-                margin-top: 50px;
+                margin-top: 60px;
                 padding-top: 20px;
                 border-top: 1px solid #e5e7eb;
                 text-align: center;
+            }
+            
+            .footer p {
                 color: #6b7280;
                 font-size: 14px;
+                margin-bottom: 5px;
             }
-            .highlight {
-                color: #4f46e5;
-                font-weight: 600;
+            
+            .footer .highlight {
+                color: #374151;
+                font-weight: 500;
+            }
+            
+            .text-right {
+                text-align: right;
             }
         </style>
     </head>
     <body>
         <div class="invoice-container">
-            <div class="invoice-header">
-                <div class="logo-section">
-                    <h1>Levitation</h1>
+            <div class="header">
+                <div class="company-info">
+                    <h1>Levitation Infotech</h1>
                     <p>Professional Invoice Solutions</p>
                 </div>
-                <div class="invoice-info">
+                <div class="invoice-title">
                     <h2>INVOICE</h2>
-                    <p><strong>Invoice #:</strong> ${invoice.invoiceNumber}</p>
-                    <p><strong>Date:</strong> ${formatDate(invoice.date)}</p>
                 </div>
             </div>
 
             <div class="invoice-details">
                 <div class="bill-to">
-                    <h3>Bill To:</h3>
-                    <p><strong>${user.name}</strong></p>
-                    <p>${user.email}</p>
+                    <h3>Bill To</h3>
+                    <div class="customer-name">${user.name}</div>
+                    <div class="customer-email">${user.email}</div>
                 </div>
                 <div class="invoice-meta">
-                    <h3>Invoice Details:</h3>
-                    <p><strong>Invoice Number:</strong> ${invoice.invoiceNumber}</p>
-                    <p><strong>Date Issued:</strong> ${formatDate(invoice.date)}</p>
-                    <p><strong>Total Items:</strong> ${products.length}</p>
+                    <h3>Invoice Details</h3>
+                    <p><strong>Invoice #:</strong> ${invoice.invoiceNumber}</p>
+                    <p><strong>Date:</strong> ${formatDate(new Date(invoice.date))}</p>
+                    <p><strong>Status:</strong> Paid</p>
                 </div>
             </div>
 
             <table class="products-table">
                 <thead>
                     <tr>
-                        <th>Product Name</th>
-                        <th class="text-right">Qty</th>
-                        <th class="text-right">Rate</th>
-                        <th class="text-right">Total</th>
-                        <th class="text-right">GST (18%)</th>
+                        <th>Description</th>
+                        <th style="text-align: center;">Qty</th>
+                        <th style="text-align: right;">Rate</th>
+                        <th style="text-align: right;">Total</th>
+                        <th style="text-align: right;">GST (18%)</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${products.map(product => `
                         <tr>
-                            <td><strong>${product.name}</strong></td>
-                            <td class="text-right">${product.qty}</td>
+                            <td class="product-name">${product.name}</td>
+                            <td style="text-align: center;">${product.qty}</td>
                             <td class="text-right">${formatCurrency(product.rate)}</td>
                             <td class="text-right">${formatCurrency(product.total)}</td>
                             <td class="text-right">${formatCurrency(product.gst)}</td>
@@ -289,22 +368,22 @@ const generateInvoiceHTML = (invoice: any, user: any, products: IProduct[]): str
 
             <div class="totals-section">
                 <div class="total-row subtotal">
-                    <span>Subtotal:</span>
-                    <span>${formatCurrency(invoice.totalAmount)}</span>
+                    <span class="total-label">Total</span>
+                    <span class="total-amount">${formatCurrency(invoice.totalAmount)}</span>
+                </div>
+                <div class="total-row gst">
+                    <span class="total-label">GST (18%)</span>
+                    <span class="total-amount">${formatCurrency(invoice.totalGST)}</span>
                 </div>
                 <div class="total-row">
-                    <span>GST (18%):</span>
-                    <span>${formatCurrency(invoice.totalGST)}</span>
-                </div>
-                <div class="total-row">
-                    <span>Grand Total:</span>
-                    <span>${formatCurrency(invoice.grandTotal)}</span>
+                    <span class="total-label">Grand Total</span>
+                    <span class="total-amount">${formatCurrency(invoice.grandTotal)}</span>
                 </div>
             </div>
 
             <div class="footer">
                 <p>Thank you for your business!</p>
-                <p class="highlight">This is a computer-generated invoice.</p>
+                <p class="highlight">This invoice was generated on ${formatDate(new Date())}</p>
             </div>
         </div>
     </body>
