@@ -1,208 +1,328 @@
-# MERN Stack PDF Generator - Invoice Application
+# Levitation Invoice Generator
 
-A full-stack web application for generating professional invoices in PDF format using the MERN stack (MongoDB, Express.js, React, Node.js) with TypeScript, Redux, TanStack Query, and Tailwind CSS.
+A full-stack MERN application for generating professional PDF invoices with a modern, responsive UI. Built with React, Node.js, TypeScript, and following industry best practices.
 
 ## 🚀 Features
 
-- **User Authentication**: Secure login and registration with JWT tokens
-- **Product Management**: Add multiple products with automatic calculations
-- **Invoice Generation**: Create professional invoices with GST calculations
-- **PDF Download**: Generate and download invoices as PDF files
-- **Responsive Design**: Modern UI that works on all devices
-- **Real-time Calculations**: Automatic GST (18%) and total calculations
-- **Form Validation**: Comprehensive client and server-side validation
+- **User Authentication**: Secure JWT-based authentication with registration and login
+- **Product Management**: Add multiple products with quantities and rates
+- **Automatic Calculations**: Real-time calculation of totals and 18% GST
+- **PDF Generation**: Server-side PDF generation using Puppeteer
+- **Professional Design**: Pixel-perfect UI following Figma specifications
+- **Responsive Design**: Works seamlessly on desktop, tablet, and mobile
+- **State Management**: Redux Toolkit for predictable state management
+- **Form Validation**: Comprehensive validation using Zod and React Hook Form
+- **Modern UI**: Shadcn/ui components with Tailwind CSS
+- **Type Safety**: Full TypeScript implementation
 
-## 🛠️ Tech Stack
+## 🛠 Tech Stack
 
 ### Frontend
 - **React 18** with TypeScript
 - **Vite** for build tooling
 - **Redux Toolkit** for state management
 - **TanStack Query** for server state management
-- **React Router** for navigation
-- **React Hook Form** with Zod validation
-- **Tailwind CSS** with Shadcn/ui components
+- **React Router v6** for routing
+- **React Hook Form + Zod** for form validation
+- **Tailwind CSS + Shadcn/ui** for styling
 - **Lucide React** for icons
 
 ### Backend
-- **Node.js** with Express.js
-- **TypeScript** for type safety
+- **Node.js** with TypeScript
+- **Express.js** for API development
 - **MongoDB** with Mongoose ODM
-- **Puppeteer** for PDF generation
 - **JWT** for authentication
+- **Puppeteer** for PDF generation
 - **bcryptjs** for password hashing
 - **Express Validator** for input validation
 
 ## 📋 Prerequisites
 
-- Node.js (v16 or higher)
-- MongoDB (local or cloud instance)
+- Node.js (v18 or higher)
+- MongoDB (local or Atlas)
 - npm or yarn package manager
 
-## 🚀 Installation & Setup
+## 🚀 Quick Start
 
-### 1. Clone the repository
+### 1. Clone the Repository
+
 ```bash
 git clone <repository-url>
 cd mern-pdf-generator
 ```
 
-### 2. Install dependencies
+### 2. Install Dependencies
+
 ```bash
 # Install root dependencies
 npm install
 
-# Install backend dependencies
-cd backend
-npm install
-
-# Install frontend dependencies
-cd ../frontend
-npm install
+# Install all dependencies (frontend + backend)
+npm run install-all
 ```
 
-### 3. Environment Configuration
+### 3. Environment Setup
 
-Create a `.env` file in the backend directory:
+#### Backend Environment
+```bash
+cd backend
+cp .env.example .env
+```
+
+Edit `backend/.env`:
 ```env
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/pdf-generator
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 NODE_ENV=development
+MONGODB_URI=mongodb://localhost:27017/invoice-generator
+JWT_SECRET=your_super_secure_jwt_secret_change_in_production
+JWT_EXPIRE=7d
+CORS_ORIGIN=http://localhost:5173
 ```
 
-### 4. Start the application
-
-#### Development Mode
+#### Frontend Environment
 ```bash
-# From the root directory
-npm run dev
-```
-
-This will start both frontend (port 3000) and backend (port 5000) in development mode.
-
-#### Production Mode
-```bash
-# Build frontend
 cd frontend
-npm run build
-
-# Start backend
-cd ../backend
-npm start
+cp .env.example .env
 ```
+
+Edit `frontend/.env`:
+```env
+VITE_API_URL=http://localhost:5000/api
+```
+
+### 4. Start MongoDB
+
+Make sure MongoDB is running on your system:
+```bash
+# For macOS with Homebrew
+brew services start mongodb-community
+
+# For Ubuntu/Debian
+sudo systemctl start mongod
+
+# For Windows - start MongoDB service or run mongod.exe
+```
+
+### 5. Run the Application
+
+```bash
+# Start both frontend and backend concurrently
+npm run dev
+
+# Or start them separately:
+# Backend (Terminal 1)
+npm run server
+
+# Frontend (Terminal 2)
+npm run client
+```
+
+The application will be available at:
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:5000
 
 ## 📱 Application Flow
 
-1. **Registration/Login**: Users can create an account or sign in
-2. **Add Products**: Add multiple products with name, quantity, and rate
-3. **Automatic Calculations**: System calculates totals and GST (18%)
-4. **Generate Invoice**: Create invoice in the database
-5. **Download PDF**: Download professional PDF invoice
-
-## 🔧 API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-
-### Invoices
-- `POST /api/invoice/create` - Create new invoice
-- `GET /api/invoice/generate-pdf/:id` - Generate PDF for invoice
-- `GET /api/invoice/my-invoices` - Get user's invoices
+1. **Registration**: Users create an account with name, email, and password
+2. **Login**: Secure authentication with email and password
+3. **Add Products**: Add multiple products with quantities and rates
+4. **Review**: View calculated totals including 18% GST
+5. **Generate PDF**: Create professional PDF invoice using backend Puppeteer
+6. **Download**: Download the generated PDF invoice
 
 ## 🎨 UI Components
 
-The application uses a modern design system with:
-- Clean and intuitive interface
-- Responsive design for all screen sizes
-- Professional color scheme
-- Smooth animations and transitions
-- Accessible form controls
+The application uses a modern component-based architecture with:
+- Reusable UI components (Button, Input, Card, etc.)
+- Consistent design system with Tailwind CSS
+- Responsive layouts that work on all devices
+- Loading states and error handling
+- Toast notifications for user feedback
 
-## 📄 PDF Features
+## 📖 API Documentation
 
-Generated PDFs include:
-- Professional invoice layout
-- Company and customer information
-- Detailed product breakdown
-- GST calculations
-- Professional styling
-- Print-ready format
+### Authentication Endpoints
 
-## 🔒 Security Features
+#### POST /api/auth/register
+Register a new user
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "password123"
+}
+```
 
-- JWT-based authentication
-- Password hashing with bcrypt
-- Input validation and sanitization
-- Protected routes
-- CORS configuration
-- Helmet.js security headers
+#### POST /api/auth/login
+Login user
+```json
+{
+  "email": "john@example.com",
+  "password": "password123"
+}
+```
 
-## 🚀 Deployment
+### Invoice Endpoints
 
-### Frontend (Vercel/Netlify)
-1. Build the frontend: `npm run build`
-2. Deploy the `dist` folder to your preferred platform
-3. Set environment variables for API URL
+#### POST /api/invoice/generate
+Generate PDF invoice (Protected)
+```json
+{
+  "products": [
+    {
+      "name": "Product 1",
+      "qty": 2,
+      "rate": 100.00
+    }
+  ]
+}
+```
 
-### Backend (Railway/Render)
-1. Deploy the backend code
-2. Set environment variables
-3. Connect to MongoDB Atlas or other cloud database
-
-## 📁 Project Structure
+## 🏗 Project Structure
 
 ```
 mern-pdf-generator/
 ├── backend/
 │   ├── src/
+│   │   ├── config/
+│   │   ├── controllers/
+│   │   ├── middleware/
 │   │   ├── models/
 │   │   ├── routes/
-│   │   ├── middleware/
+│   │   ├── types/
 │   │   └── index.ts
 │   ├── package.json
 │   └── tsconfig.json
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   ├── pages/
-│   │   ├── store/
+│   │   │   ├── pages/
+│   │   │   ├── ui/
+│   │   │   └── ProtectedRoute.tsx
+│   │   ├── lib/
 │   │   ├── services/
-│   │   └── lib/
+│   │   ├── store/
+│   │   ├── types/
+│   │   ├── App.tsx
+│   │   ├── globals.css
+│   │   └── main.tsx
 │   ├── package.json
+│   ├── tailwind.config.js
 │   └── vite.config.ts
+├── package.json
 └── README.md
 ```
+
+## 🚀 Deployment
+
+### Frontend Deployment (Vercel/Netlify)
+
+1. Build the frontend:
+```bash
+cd frontend
+npm run build
+```
+
+2. Deploy the `dist` folder to your hosting platform
+3. Update environment variables in your hosting dashboard
+
+### Backend Deployment (Vercel/Railway/Heroku)
+
+1. Build the backend:
+```bash
+cd backend
+npm run build
+```
+
+2. Deploy to your preferred platform
+3. Set environment variables:
+   - `MONGODB_URI`
+   - `JWT_SECRET`
+   - `NODE_ENV=production`
+   - `CORS_ORIGIN` (your frontend URL)
+
+### Environment Variables for Production
+
+#### Backend
+```env
+NODE_ENV=production
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database
+JWT_SECRET=your_super_secure_jwt_secret_for_production
+JWT_EXPIRE=7d
+CORS_ORIGIN=https://your-frontend-domain.com
+PORT=5000
+```
+
+#### Frontend
+```env
+VITE_API_URL=https://your-backend-domain.com/api
+```
+
+## 🧪 Testing
+
+```bash
+# Backend tests
+cd backend
+npm test
+
+# Frontend tests
+cd frontend
+npm test
+```
+
+## 🔧 Development Scripts
+
+```bash
+# Root level scripts
+npm run dev          # Start both frontend and backend
+npm run server       # Start backend only
+npm run client       # Start frontend only
+npm run install-all  # Install all dependencies
+npm run build        # Build frontend for production
+
+# Backend scripts
+cd backend
+npm run dev          # Start with ts-node-dev
+npm run build        # Compile TypeScript
+npm run start        # Start production server
+
+# Frontend scripts
+cd frontend
+npm run dev          # Start Vite dev server
+npm run build        # Build for production
+npm run preview      # Preview production build
+```
+
+## 🔒 Security Features
+
+- Password hashing with bcryptjs
+- JWT token authentication
+- Input validation and sanitization
+- CORS protection
+- MongoDB injection protection
+- Rate limiting ready (can be added)
+
+## 📝 Additional Notes
+
+- The application follows MVC architecture in the backend
+- Uses Redux Toolkit for predictable state management
+- Implements proper error handling throughout the application
+- PDF generation is handled server-side for security
+- All forms have comprehensive validation
+- Responsive design works on all screen sizes
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## 📝 License
+## 📄 License
 
 This project is licensed under the MIT License.
 
-## 🆘 Support
+## 📞 Support
 
-If you encounter any issues or have questions, please:
-1. Check the documentation
-2. Search existing issues
-3. Create a new issue with detailed information
-
-## 🎯 Future Enhancements
-
-- Invoice templates customization
-- Email invoice functionality
-- Invoice history and management
-- Multi-currency support
-- Advanced reporting features
-- Mobile app version
-
----
-
-**Note**: This application is designed for educational purposes and demonstrates modern web development practices with the MERN stack. 
+For support, email support@levitation.com or create an issue in the repository. 
