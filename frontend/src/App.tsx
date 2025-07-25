@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Provider, useDispatch } from 'react-redux';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 
-import { store } from './store';
+import { store, RootState } from './store';
 import { loadUserFromStorage } from './store/slices/authSlice';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './components/pages/LoginPage';
@@ -24,18 +24,50 @@ const queryClient = new QueryClient({
 
 const AppContent: React.FC = () => {
   const dispatch = useDispatch();
+  const { isAuthenticated, isLoading } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
     // Load user from localStorage on app start
+    console.log('App - Loading user from storage');
     dispatch(loadUserFromStorage());
   }, [dispatch]);
+
+  // Show loading screen while initializing
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg">Initializing...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Router>
       <Routes>
         {/* Public Routes */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        <Route 
+          path="/login" 
+          element={
+            isAuthenticated ? (
+              <Navigate to="/products" replace />
+            ) : (
+              <LoginPage />
+            )
+          } 
+        />
+        <Route 
+          path="/register" 
+          element={
+            isAuthenticated ? (
+              <Navigate to="/products" replace />
+            ) : (
+              <RegisterPage />
+            )
+          } 
+        />
         
         {/* Protected Routes */}
         <Route
@@ -56,10 +88,20 @@ const AppContent: React.FC = () => {
         />
         
         {/* Default redirect */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route 
+          path="/" 
+          element={
+            <Navigate to={isAuthenticated ? "/products" : "/login"} replace />
+          } 
+        />
         
-        {/* Catch all - redirect to login */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        {/* Catch all - redirect based on auth status */}
+        <Route 
+          path="*" 
+          element={
+            <Navigate to={isAuthenticated ? "/products" : "/login"} replace />
+          } 
+        />
       </Routes>
       
       {/* Global Toast Notifications */}

@@ -3,6 +3,8 @@ import { ApiResponse, AuthResponse, LoginRequest, RegisterRequest, InvoiceReques
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+console.log('API Base URL:', API_BASE_URL);
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -17,22 +19,33 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    console.log('API Request:', config.method?.toUpperCase(), config.url, config.data);
     return config;
   },
   (error) => {
+    console.error('API Request Error:', error);
     return Promise.reject(error);
   }
 );
 
 // Response interceptor to handle errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('API Response:', response.status, response.data);
+    return response;
+  },
   (error) => {
+    console.error('API Response Error:', error.response?.status, error.response?.data);
+    
     if (error.response?.status === 401) {
       // Clear invalid token
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      
+      // Only redirect if not already on login page
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -40,20 +53,41 @@ api.interceptors.response.use(
 
 export const authAPI = {
   login: async (data: LoginRequest): Promise<ApiResponse<AuthResponse>> => {
-    const response = await api.post('/auth/login', data);
-    return response.data;
+    try {
+      console.log('Login API call with data:', data);
+      const response = await api.post('/auth/login', data);
+      console.log('Login API response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Login API error:', error);
+      throw error;
+    }
   },
   
   register: async (data: RegisterRequest): Promise<ApiResponse> => {
-    const response = await api.post('/auth/register', data);
-    return response.data;
+    try {
+      console.log('Register API call with data:', data);
+      const response = await api.post('/auth/register', data);
+      console.log('Register API response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Register API error:', error);
+      throw error;
+    }
   },
 };
 
 export const invoiceAPI = {
   generatePDF: async (data: InvoiceRequest): Promise<ApiResponse<InvoiceResponse>> => {
-    const response = await api.post('/invoice/generate', data);
-    return response.data;
+    try {
+      console.log('Generate PDF API call with data:', data);
+      const response = await api.post('/invoice/generate', data);
+      console.log('Generate PDF API response received');
+      return response.data;
+    } catch (error: any) {
+      console.error('Generate PDF API error:', error);
+      throw error;
+    }
   },
 };
 

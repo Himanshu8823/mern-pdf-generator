@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, Link } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
@@ -13,7 +13,8 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../ui/card';
 import { authAPI } from '../../services/api';
-import { loginSuccess, setLoading } from '../../store/slices/authSlice';
+import { loginSuccess, setLoading, clearError } from '../../store/slices/authSlice';
+import { RootState } from '../../store';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -25,6 +26,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { isAuthenticated, isLoading } = useSelector((state: RootState) => state.auth);
   const [showPassword, setShowPassword] = React.useState(false);
 
   const {
@@ -35,25 +37,44 @@ const LoginPage: React.FC = () => {
     resolver: zodResolver(loginSchema),
   });
 
+  // Redirect if already authenticated
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/products', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
   const loginMutation = useMutation({
     mutationFn: authAPI.login,
+    onMutate: () => {
+      dispatch(setLoading(true));
+    },
     onSuccess: (response) => {
+      dispatch(setLoading(false));
       if (response.success && response.data) {
+        console.log('Login successful, dispatching loginSuccess:', response.data);
         dispatch(loginSuccess(response.data));
-        toast.success('Login successful!');
-        navigate('/products');
+        toast.success('Login successful! Redirecting...');
+        
+        // Force navigation after a short delay to ensure state is updated
+        setTimeout(() => {
+          navigate('/products', { replace: true });
+        }, 100);
       } else {
         toast.error(response.message || 'Login failed');
       }
     },
     onError: (error: any) => {
-      const errorMessage = error.response?.data?.message || 'Login failed';
+      dispatch(setLoading(false));
+      console.error('Login error:', error);
+      const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
       toast.error(errorMessage);
     },
   });
 
   const onSubmit = (data: LoginFormData) => {
-    dispatch(setLoading(true));
+    console.log('Login form submitted:', { email: data.email });
+    dispatch(clearError());
     loginMutation.mutate(data);
   };
 
@@ -130,9 +151,9 @@ const LoginPage: React.FC = () => {
                 <Button
                   type="submit"
                   className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
-                  disabled={loginMutation.isPending}
+                  disabled={isLoading || loginMutation.isPending}
                 >
-                  {loginMutation.isPending ? (
+                  {(isLoading || loginMutation.isPending) ? (
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                       Signing In...
